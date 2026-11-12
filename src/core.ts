@@ -8,6 +8,7 @@ export async function reviewRepository(request: ReviewRequest): Promise<string> 
   const validations = await runValidations(
     request.validationCommands ?? [],
     request.repositoryPath,
+    request.validationOptions,
   );
   return markdownReport({
     repositoryPath: request.repositoryPath,
