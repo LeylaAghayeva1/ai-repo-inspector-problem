@@ -109,3 +109,39 @@ describe("markdownReport changed files section", () => {
     expect(report.split("\n").filter((l) => l.endsWith("(modified)"))).toHaveLength(200);
   });
 });
+
+describe("markdownReport terminal safety", () => {
+  it("removes colour codes from command output and shows other control characters as ?", () => {
+    const report = markdownReport({
+      repositoryPath: "/r",
+      changedFiles: [],
+      validationResults: [
+        { command: "x", status: "failed", output: "\u001b[31mred error\u001b[0m\r\nline2\u0007bell\ttab" },
+      ],
+    });
+    expect(report).not.toContain("\u001b");
+    expect(report).not.toContain("\u0007");
+    expect(report).not.toContain("\r");
+    expect(report).toContain("red error\nline2?bell\ttab");
+  });
+
+  it("flattens escape codes and newlines in file names and the repository path", () => {
+    const report = markdownReport({
+      repositoryPath: "/r\u001b[2Jx",
+      changedFiles: [{ path: "bad\u001b[31m\nname\u0000.txt", status: "added" }],
+      validationResults: [],
+    });
+    expect(report).not.toContain("\u001b");
+    expect(report).not.toContain("\u0000");
+    expect(report.split("\n").filter((l) => l.startsWith("- "))).toHaveLength(1);
+  });
+
+  it("keeps ordinary text, unicode and tabs untouched", () => {
+    const report = markdownReport({
+      repositoryPath: "/r",
+      changedFiles: [],
+      validationResults: [{ command: "x", status: "passed", output: "ünïcödé ✓\tok" }],
+    });
+    expect(report).toContain("ünïcödé ✓\tok");
+  });
+});

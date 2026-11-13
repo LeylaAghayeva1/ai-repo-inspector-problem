@@ -17,7 +17,7 @@ export const BASE_REF_RULES =
   "base ref must be a branch, tag or commit name (optionally with ~N or ^N), " +
   "cannot start with '-', and cannot be a range (a..b).";
 
-export function isSafeBaseRef(ref: unknown): ref is string {
+export function isSafeBaseRef(ref: unknown): boolean {
   return (
     typeof ref === "string" &&
     ref.length > 0 &&

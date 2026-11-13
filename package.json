@@ -5,7 +5,7 @@
   "type": "module",
   "description": "A repository review tool with CLI and MCP interfaces.",
   "bin": {
-    "inspector": "./dist/cli.js"
+    "inspector": "./dist/src/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

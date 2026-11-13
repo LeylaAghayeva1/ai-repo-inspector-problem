@@ -32,7 +32,8 @@ export type ReviewRequest = {
   repositoryPath: string;
   baseRef?: string;
   validationCommands?: string[];
-  format?: "markdown" | "json";
+  /** Only Markdown exists. Anything else is rejected rather than silently ignored. */
+  format?: "markdown";
   /** Limits and allowlist applied to validation commands. Set by the interface adapter. */
   validationOptions?: ValidationOptions;
 };
