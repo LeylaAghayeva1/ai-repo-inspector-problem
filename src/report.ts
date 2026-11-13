@@ -1,8 +1,12 @@
-import type { ChangedFile, ValidationResult } from "./types.js";
+import type { BaseInfo, ChangedFile, ValidationResult } from "./types.js";
+
+/** Long file lists would flood an AI client's context window; the rest is summarised. */
+export const MAX_FILES_IN_REPORT = 200;
 
 type ReportInput = {
   repositoryPath: string;
   changedFiles: ChangedFile[];
+  base?: BaseInfo;
   validationResults: ValidationResult[];
 };
 
@@ -39,9 +43,26 @@ function fenced(text: string): string[] {
 }
 
 export function markdownReport(input: ReportInput): string {
-  const lines = [`# Review Report: ${codeSpan(input.repositoryPath)}`, "", "## Changed files"];
-  for (const file of input.changedFiles) {
-    lines.push(`- ${escapeMarkdown(file.path)} (${file.status})`);
+  const lines = [`# Review Report: ${codeSpan(input.repositoryPath)}`];
+  if (input.base) {
+    lines.push(
+      "",
+      `Compared against ${codeSpan(input.base.label)} (${input.base.sha.slice(0, 7)})` +
+        `${input.base.detected ? ", detected as the default branch" : ""}. ` +
+        "Includes staged, unstaged and untracked changes.",
+    );
+  }
+  lines.push("", `## Changed files (${input.changedFiles.length})`);
+  if (input.changedFiles.length === 0) lines.push("No changes found.");
+  for (const file of input.changedFiles.slice(0, MAX_FILES_IN_REPORT)) {
+    const name =
+      file.status === "renamed" && file.oldPath !== undefined
+        ? `${escapeMarkdown(file.oldPath)} -> ${escapeMarkdown(file.path)}`
+        : escapeMarkdown(file.path);
+    lines.push(`- ${name} (${file.status})`);
+  }
+  if (input.changedFiles.length > MAX_FILES_IN_REPORT) {
+    lines.push(`- ... and ${input.changedFiles.length - MAX_FILES_IN_REPORT} more files not shown.`);
   }
 
   lines.push("", "## Validation results");

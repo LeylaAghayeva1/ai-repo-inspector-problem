@@ -2,7 +2,19 @@ import type { ValidationOptions } from "./validation.js";
 
 export type ChangedFile = {
   path: string;
-  status: "added" | "modified" | "deleted" | "untracked";
+  status: "added" | "modified" | "deleted" | "renamed" | "untracked";
+  /** Previous path, only for renamed files. */
+  oldPath?: string;
+};
+
+/** What the changes were compared against. */
+export type BaseInfo = {
+  /** The ref as given or auto-detected, e.g. "origin/main". */
+  label: string;
+  /** Full commit hash the label resolved to. */
+  sha: string;
+  /** True when the caller did not pass a base ref and the default branch was detected. */
+  detected: boolean;
 };
 
 export type ValidationResult = {

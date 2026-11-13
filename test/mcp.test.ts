@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -132,7 +132,7 @@ describe("MCP trust boundary", () => {
   it("does not treat a sibling directory with a shared prefix as inside an allowed root", () => {
     const root = mkdtempSync(join(tmpdir(), "inspector-pfx-"));
     const sibling = root + "-evil";
-    execFileSync("mkdir", [sibling]);
+    mkdirSync(sibling);
     cleanup.push(root, sibling);
     expect(() => resolveRepositoryPath(sibling, { INSPECTOR_ALLOWED_ROOTS: root })).toThrow(/outside/);
   });
@@ -173,7 +173,7 @@ describe("path restrictions in depth", () => {
     const inB = join(rootB, "repo");
     mkdirSync(inB);
     cleanup.push(rootA, rootB);
-    expect(resolveRepositoryPath(inB, { INSPECTOR_ALLOWED_ROOTS: `${rootA}:${rootB}/` })).toBeTruthy();
+    expect(resolveRepositoryPath(inB, { INSPECTOR_ALLOWED_ROOTS: `${rootA}${delimiter}${rootB}/` })).toBeTruthy();
   });
 
   it("can require allowed roots to be configured", () => {
@@ -210,7 +210,7 @@ describe("MCP behaviour end to end", () => {
     cleanup.push(repo);
     const { isError, text } = await call({ repo_path: repo, base_ref: "does-not-exist" });
     expect(isError).toBe(true);
-    expect(text).toContain("unknown revision");
+    expect(text).toContain("was not found in this repository");
     expect(text).not.toContain("Use '--'");
     expect(text.split("\n").length).toBeLessThanOrEqual(2);
   });

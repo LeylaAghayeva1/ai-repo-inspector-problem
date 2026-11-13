@@ -74,3 +74,38 @@ describe("markdownReport filename safety", () => {
     expect(report).toContain("Note: Command timed out after 5 ms");
   });
 });
+
+describe("markdownReport changed files section", () => {
+  const none = { validationResults: [] as never[] };
+
+  it("shows renames as old -> new and escapes both names", () => {
+    const report = markdownReport({
+      repositoryPath: "/r",
+      changedFiles: [{ path: "new_name.ts", oldPath: "old*name.ts", status: "renamed" }],
+      ...none,
+    });
+    expect(report).toContain("old\\*name.ts -> new\\_name.ts (renamed)");
+  });
+
+  it("says what the changes were compared against", () => {
+    const sha = "0123456789abcdef0123456789abcdef01234567";
+    const detected = markdownReport({ repositoryPath: "/r", changedFiles: [], base: { label: "origin/main", sha, detected: true }, ...none });
+    expect(detected).toContain("Compared against ` origin/main ` (0123456), detected as the default branch.");
+    const explicit = markdownReport({ repositoryPath: "/r", changedFiles: [], base: { label: "v1.0", sha, detected: false }, ...none });
+    expect(explicit).not.toContain("detected as the default branch");
+  });
+
+  it("says so when nothing changed", () => {
+    const report = markdownReport({ repositoryPath: "/r", changedFiles: [], ...none });
+    expect(report).toContain("## Changed files (0)");
+    expect(report).toContain("No changes found.");
+  });
+
+  it("caps a very long file list and states how many were left out", () => {
+    const many = Array.from({ length: 1000 }, (_, i) => ({ path: `f${i}.ts`, status: "modified" as const }));
+    const report = markdownReport({ repositoryPath: "/r", changedFiles: many, ...none });
+    expect(report).toContain("## Changed files (1000)");
+    expect(report).toContain("... and 800 more files not shown.");
+    expect(report.split("\n").filter((l) => l.endsWith("(modified)"))).toHaveLength(200);
+  });
+});

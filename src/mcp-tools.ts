@@ -2,6 +2,7 @@ import { realpathSync, statSync } from "node:fs";
 import { delimiter, sep } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { BASE_REF_MAX_LENGTH, BASE_REF_PATTERN, BASE_REF_RULES, isSafeBaseRef } from "./git.js";
 import { reviewRepository } from "./core.js";
 import type { ValidationOptions } from "./validation.js";
 
@@ -33,12 +34,9 @@ export const reviewInputShape = {
     .describe("Path to the Git repository to inspect. Must be an existing directory."),
   base_ref: z
     .string()
-    .max(200)
-    .regex(
-      /^[A-Za-z0-9][A-Za-z0-9._/-]*(?:[~^]\d*)*$/,
-      "base_ref must be a branch, tag or commit name (optionally with ~N or ^N), and cannot start with '-'",
-    )
-    .refine((ref) => !ref.includes("..") && !ref.includes("//") && !ref.endsWith("/"), "base_ref must be a single ref, not a range")
+    .max(BASE_REF_MAX_LENGTH)
+    .regex(BASE_REF_PATTERN, BASE_REF_RULES)
+    .refine(isSafeBaseRef, BASE_REF_RULES)
     .optional()
     .describe("Branch, tag or commit to compare against, e.g. main, origin/main, v1.0, HEAD~1. Ranges (a..b) are not accepted. Defaults to the repository's default branch."),
   checks: z
