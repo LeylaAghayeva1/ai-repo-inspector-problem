@@ -51,6 +51,14 @@ async function call(args: Record<string, unknown>) {
 }
 
 describe("MCP contract", () => {
+  it("does not claim the tool is harmless: named npm scripts can write files and use the network", async () => {
+    const { tools } = await client.listTools();
+    const hints = tools.find((t) => t.name === "review_repository")!.annotations;
+    expect(hints?.readOnlyHint).toBe(false);
+    expect(hints?.destructiveHint).not.toBe(false);
+    expect(hints?.openWorldHint).not.toBe(false);
+  });
+
   it("advertises repo_path, base_ref and named checks, and no free-form commands", async () => {
     const { tools } = await client.listTools();
     const tool = tools.find((t) => t.name === "review_repository");
